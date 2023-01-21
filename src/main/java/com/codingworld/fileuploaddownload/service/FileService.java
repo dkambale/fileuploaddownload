@@ -2,45 +2,40 @@ package com.codingworld.fileuploaddownload.service;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class FileService {
 
-  String storeLocation = "/store";
+	@Autowired
+	private ResourceLoader resourceLoader;
 
-  public void uploadFile(MultipartFile file) throws IOException {
-    // Get the filename and build the local file path
-    String filename = file.getOriginalFilename();
-    String filepath = Paths.get(storeLocation, filename).toString();
+	public void uploadFile(MultipartFile file) throws IOException {
 
-    // Save the file locally
-    BufferedOutputStream stream =
-        new BufferedOutputStream(new FileOutputStream(new File(filepath)));
-    stream.write(file.getBytes());
-    stream.close();
-  }
+		File file1 = new File(
+				resourceLoader.getResource("classpath:store/").getFile() + "/" + file.getOriginalFilename());
+		if (file1.createNewFile()) {
+			System.out.println("File is created!" + file1.getAbsolutePath());
 
-  public Resource downloadFile(String fileName) throws Exception {
-    try {
-      Path filePath = Paths.get(storeLocation + fileName).toAbsolutePath().normalize();
-      Resource resource = new UrlResource(filePath.toUri());
-      if (resource.exists()) {
-        return resource;
-      } else {
-        throw new Exception("File not found " + fileName);
-      }
-    } catch (MalformedURLException ex) {
-      throw new MalformedURLException("File not found " + fileName);
-    }
-  }
+		} else {
+			System.out.println("File already exists.");
+		}
+
+		BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file1));
+		stream.write(file.getBytes());
+		stream.close();
+	}
+
+	public Resource downloadFile(String fileName) throws Exception {
+
+		final Resource fileResource = resourceLoader.getResource("classpath:store/" + fileName);
+		return fileResource;
+	}
 }
